@@ -6,6 +6,7 @@ from keras.preprocessing.sequence import pad_sequences
 from keras.models import Sequential
 from keras.layers import Dense, Embedding, GlobalAveragePooling1D, Conv1D, MaxPooling1D, Flatten
 
+
 class WordEmbedding:
     def __init__(self, self_path):
         self.word_to_index, self.word_to_vec_map, self.index_to_word = self.load_embeddings(self_path)

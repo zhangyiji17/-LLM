@@ -1,9 +1,8 @@
 import jieba
 from transformers import BertTokenizer
-from keras.preprocessing.text import Tokenizer
+from keras.preprocessing.text import Tokenizer, tokenizer_from_json
 from keras.preprocessing.sequence import pad_sequences
 import json
-
 
 
 texts = ['张某是一位智能编程助手', '这是测试文本']
@@ -47,7 +46,7 @@ with open('tokenizer_word_index.json', 'w', encoding='utf-8') as f:
 with open('tokenizer_word_index.json', 'r', encoding='utf-8') as f:
     json_string = f.read()
     # 从JSON字符串中加载分词器配置
-    # tokenizer = Tokenizer.from_json(json_string)
+    tokenizer = tokenizer_from_json(json_string)
     # 使用加载的分词器进行分词
     word_index = tokenizer.word_index
     for word, index in word_index.items():
@@ -58,6 +57,7 @@ ids = tokenizer.texts_to_sequences(seg_list)
 print(ids)
 p_id = pad_sequences(ids, padding='post')
 print(p_id)
+
 
 # to_json()方法将Tokenizer对象序列化为JSON格式的字符串，可以将其保存到文件中，以便在需要时重新加载Tokenizer对象。
 def to_json(self):
@@ -106,10 +106,26 @@ def tokenizer_from_json(json_string):
     :argument 关键字参数
     :return 分词器对象。
     """
-    tokenizer = Tokenizer()  # 创建一个空的分词器对象
     tokenizer_config = json.loads(json_string)  # 将JSON字符串转换为字典
-    tokenizer.__setstate__(tokenizer_config)  # 使用字典设置分词器的状态
-    return tokenizer  # 返回分词器对象
+    config = tokenizer_config.get("config")  # 获取分词器的配置
+
+    word_counts = json.loads(config.pop("word_counts"))  # 将词汇表转换为字典
+    word_docs = json.loads(config.pop("word_docs"))  # 将文档频率表转换为字典
+    index_docs = json.loads(config.pop("index_docs"))  # 将索引文档频率表转换为字典
+    index_word = json.loads(config.pop("index_word"))  # 将索引词汇表转换为字典
+    word_index = json.loads(config.pop("word_index"))  # 将词汇表索引转换为字典
+    # Integer indexing gets converted to strings with json.dumps()
+    index_docs = {int(k): v for k, v in index_docs.items()}  # 将索引文档频率表中的键转换为整数
+    index_word = {int(k): v for k, v in index_word.items()}  # 将索引词汇表中的键转换为整数
+
+    tokenizer = Tokenizer(**config)  # 创建分词器对象
+    tokenizer.word_counts = word_counts  # 设置分词器的词汇表
+    tokenizer.word_docs = word_docs  # 设置分词器的文档频率表
+    tokenizer.index_docs = index_docs  # 设置分词器的索引文档频率表
+    tokenizer.word_index = word_index  # 设置分词器的词汇表索引
+    tokenizer.index_word = index_word  # 设置分词器的索引词汇表
+
+    return tokenizer
 
 
 
